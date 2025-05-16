@@ -1,12 +1,8 @@
 import os
 import logging
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
 from dotenv import load_dotenv
-from database import init_db
-from handlers.user_handlers import register_user_handlers
-from handlers.admin_handlers import register_admin_handlers
-from handlers.callback_handlers import register_callback_handlers
 
 load_dotenv()
 TOKEN = os.getenv("BOT_TOKEN")
@@ -18,11 +14,16 @@ logger = logging.getLogger(__name__)
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
 
-register_user_handlers(dp)
-register_admin_handlers(dp, ADMIN_ID)
-register_callback_handlers(dp)
+@dp.message_handler(commands=['start'])
+async def cmd_start(message: types.Message):
+    keyboard = types.InlineKeyboardMarkup()
+    keyboard.add(types.InlineKeyboardButton("👤 Mi Perfil", callback_data="profile"))
+    await message.reply("¡Bienvenido! Usa los botones para navegar:", reply_markup=keyboard)
 
-init_db()
+@dp.callback_query_handler(lambda c: c.data == "profile")
+async def show_profile(callback: types.CallbackQuery):
+    await callback.answer("Perfil mostrado", show_alert=True)
 
 if __name__ == "__main__":
+    logger.info("Bot starting...")
     executor.start_polling(dp, skip_updates=True)
